@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+<title>Sistema de Control de Tiempo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#12151b;
+    --surface:#1b212b;
+    --surface-2:#222b37;
+    --line: rgba(237,234,226,0.10);
+    --text:#edeae2;
+    --muted:#98a1ad;
+    --brass:#cc9a3d;
+    --brass-dim: rgba(204,154,61,0.18);
+    --teal:#4f9c90;
+    --rust:#c1613f;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color: transparent;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;
+    background:var(--ink);
+    color:var(--text);
+    font-family:'Inter', sans-serif;
+    line-height:1.55;
+    padding-bottom:80px;
+  }
+  ::selection{background:var(--brass-dim); color:var(--text);}
+
+  h1,h2,h3{font-family:'Fraunces', serif; font-weight:600; letter-spacing:-0.01em; margin:0;}
+
+  .eyebrow{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11.5px;
+    letter-spacing:0.14em;
+    text-transform:uppercase;
+    color:var(--brass);
+  }
+
+  /* HERO */
+  .hero{
+    padding:56px 22px 34px;
+    text-align:center;
+    background:
+      radial-gradient(120% 90% at 50% -10%, rgba(204,154,61,0.14), transparent 55%),
+      var(--ink);
+    border-bottom:1px solid var(--line);
+  }
+  .dial{
+    width:172px; height:172px;
+    margin:26px auto 8px;
+    position:relative;
+  }
+  .dial svg{width:100%; height:100%; display:block;}
+  .dial-tick{ transition: stroke 0.25s ease, stroke-width .25s ease; }
+  .dial-tick.active{ stroke:var(--brass); stroke-width:3.4; }
+  .dial-center{
+    position:absolute; inset:0;
+    display:flex; align-items:center; justify-content:center;
+    flex-direction:column;
+  }
+  .dial-num{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:26px; color:var(--brass); font-weight:600;
+  }
+  .dial-label{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:9.5px; color:var(--muted); letter-spacing:.08em;
+    text-transform:uppercase; margin-top:2px; max-width:90px; text-align:center;
+  }
+  .hero h1{font-size:29px; margin-top:18px; line-height:1.15;}
+  .hero p{color:var(--muted); font-size:14.5px; max-width:340px; margin:12px auto 0;}
+  .hero .source{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:10.5px; color:var(--muted); margin-top:16px; opacity:.75;
+  }
+
+  section{padding:34px 20px; max-width:640px; margin:0 auto;}
+  section.tight{padding-top:8px;}
+
+  .kicker{display:flex; align-items:center; gap:10px; margin-bottom:14px;}
+  .kicker .n{
+    font-family:'IBM Plex Mono', monospace; font-size:11px; color:var(--ink);
+    background:var(--brass); width:22px; height:22px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center; flex-shrink:0; font-weight:600;
+  }
+  .kicker h2{font-size:21px;}
+
+  .card{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:18px 18px;
+    margin-bottom:12px;
+  }
+  .card p{margin:0 0 10px; color:var(--text); font-size:15px;}
+  .card p:last-child{margin-bottom:0;}
+  .card .lbl{
+    font-family:'IBM Plex Mono', monospace; font-size:10.5px; color:var(--teal);
+    letter-spacing:.08em; text-transform:uppercase; display:block; margin-bottom:6px;
+  }
+
+  .steps{list-style:none; margin:0; padding:0; counter-reset: step;}
+  .steps li{
+    counter-increment: step;
+    position:relative;
+    padding:0 0 18px 34px;
+    border-left:1px solid var(--line);
+    margin-left:11px;
+    font-size:14.5px;
+    color:var(--text);
+  }
+  .steps li:last-child{border-left:1px solid transparent; padding-bottom:0;}
+  .steps li::before{
+    content: counter(step);
+    font-family:'IBM Plex Mono', monospace;
+    position:absolute; left:-11px; top:-1px;
+    width:22px; height:22px; border-radius:50%;
+    background:var(--surface-2); border:1px solid var(--brass);
+    color:var(--brass); font-size:11px; font-weight:600;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .steps b{color:var(--brass); font-weight:600;}
+
+  /* Acordeón de los 10 tiempos */
+  .accordion{border-top:1px solid var(--line);}
+  .item{border-bottom:1px solid var(--line);}
+  .item summary{
+    list-style:none;
+    display:flex; align-items:center; gap:14px;
+    padding:16px 4px;
+    cursor:pointer;
+  }
+  .item summary::-webkit-details-marker{display:none;}
+  .item .hour{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12px; color:var(--brass);
+    background:var(--brass-dim);
+    border-radius:20px; padding:4px 9px;
+    flex-shrink:0; min-width:44px; text-align:center;
+  }
+  .item .title{font-size:15.5px; font-weight:600; flex:1;}
+  .item .chev{
+    color:var(--muted); font-size:13px; transition:transform .25s ease; flex-shrink:0;
+  }
+  .item[open] .chev{transform:rotate(180deg);}
+  .item .body{padding:0 4px 20px 4px; font-size:14.5px; color:var(--muted);}
+  .item .body .tag{
+    display:inline-block; font-family:'IBM Plex Mono', monospace; font-size:10px;
+    color:var(--teal); text-transform:uppercase; letter-spacing:.06em; margin:12px 0 5px;
+  }
+  .item .body p{margin:4px 0 0; color:var(--text);}
+  .item .body ul{margin:6px 0 0; padding-left:18px; color:var(--text);}
+  .item .body li{margin-bottom:4px;}
+
+  /* Tablas responsivas -> cards */
+  .grid-table{display:flex; flex-direction:column; gap:8px;}
+  .row{
+    display:grid; grid-template-columns: 54px 1fr;
+    gap:12px;
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:12px 14px;
+    align-items:start;
+  }
+  .row .tag{
+    font-family:'IBM Plex Mono', monospace; font-weight:600; font-size:14px;
+    color:var(--ink); background:var(--brass);
+    width:38px; height:38px; border-radius:10px;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .row.rust .tag{background:var(--rust); color:var(--text);}
+  .row .txt b{display:block; font-size:14px; color:var(--text); margin-bottom:2px;}
+  .row .txt span{font-size:13px; color:var(--muted);}
+
+  .thieves{display:flex; flex-direction:column; gap:10px;}
+  .thief{
+    background:var(--surface); border:1px solid var(--line); border-radius:12px;
+    padding:13px 14px; display:flex; gap:12px; align-items:flex-start;
+  }
+  .thief .num{
+    font-family:'IBM Plex Mono', monospace; color:var(--rust); font-size:13px;
+    flex-shrink:0; padding-top:1px;
+  }
+  .thief .txt b{display:block; font-size:14px; color:var(--text); margin-bottom:3px;}
+  .thief .txt span{font-size:13px; color:var(--muted);}
+
+  .callout{
+    background:linear-gradient(160deg, var(--surface-2), var(--surface));
+    border:1px solid var(--brass-dim);
+    border-radius:14px; padding:20px;
+    margin-top:6px;
+  }
+  .callout .eyebrow{margin-bottom:8px; display:block;}
+  .callout p{margin:0; font-size:14.5px; color:var(--text);}
+
+  footer{
+    text-align:center; padding:30px 20px 10px;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:10.5px; color:var(--muted); opacity:.7;
+  }
+
+  @media (min-width:480px){
+    .hero h1{font-size:33px;}
+  }
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <span class="eyebrow">Master Your Time, Master Your Life — Brian Tracy</span>
+  <div class="dial">
+    <svg viewBox="0 0 172 172">
+      <circle cx="86" cy="86" r="78" fill="none" stroke="rgba(237,234,226,0.12)" stroke-width="1.4"/>
+      <g id="ticks"></g>
+    </svg>
+    <div class="dial-center">
+      <div class="dial-num" id="dialNum">10</div>
+      <div class="dial-label" id="dialLabel">tipos de tiempo</div>
+    </div>
+  </div>
+  <h1>Sistema de<br>Control de Tiempo</h1>
+  <p>No todo tu tiempo es igual. Cada tipo pide una forma distinta de usarlo — este es el criterio para reconocer en cuál estás parado, y actuar en consecuencia.</p>
+  <div class="source">ADAPTADO PARA USO SIN HABER LEÍDO EL LIBRO</div>
+</div>
+
+<section class="tight">
+  <div class="kicker"><span class="n">1</span><h2>La base: metas claras</h2></div>
+  <p style="color:var(--muted); font-size:14.5px; margin:-6px 0 16px;">Todo lo demás se apoya en esto. Sin saber hacia dónde vas, cualquier sistema de organización es solo "estar ocupado con más orden".</p>
+
+  <div class="card">
+    <span class="lbl">Fórmula en 7 pasos</span>
+    <ol class="steps">
+      <li><b>Definila con precisión.</b> No "vender más" — "facturar $X de comisiones para diciembre".</li>
+      <li><b>Escribila.</b> Meta no escrita = deseo, no plan.</li>
+      <li><b>Ponele fecha límite.</b> Sin fecha no hay urgencia real.</li>
+      <li><b>Listá los obstáculos</b> que te separan de esa meta hoy.</li>
+      <li><b>Identificá qué necesitás</b> aprender o quién te puede ayudar.</li>
+      <li><b>Armá un plan</b> — los pasos concretos, en orden.</li>
+      <li><b>Actuá todos los días</b> sobre ese plan, aunque sea un solo paso.</li>
+    </ol>
+  </div>
+
+  <div class="card">
+    <span class="lbl">Regla de las 3P al escribirla</span>
+    <p><b style="color:var(--brass)">Personal</b> — "yo gano...", no "hay que ganar..."</p>
+    <p><b style="color:var(--brass)">Positiva</b> — en positivo: "cierro X ventas por semana", no "dejar de perder clientes"</p>
+    <p><b style="color:var(--brass)">Presente</b> — "gano $X por mes", no "voy a ganar"</p>
+  </div>
+
+  <div class="card">
+    <span class="lbl">Filtro A / B</span>
+    <p>Ante cualquier actividad del día, preguntate: <b style="color:var(--text)">¿esto es A o B?</b></p>
+    <p><b style="color:var(--brass)">A</b> = te acerca directo a tu meta. <b style="color:var(--muted)">B</b> = todo lo demás, aunque se sienta productivo.</p>
+    <p style="color:var(--muted); font-size:13.5px;">No se trata de eliminar toda tarea B — sino de no confundir "estar ocupado" con "estar avanzando".</p>
+  </div>
+</section>
+
+<section class="tight">
+  <div class="kicker"><span class="n">2</span><h2>Los 10 tiempos</h2></div>
+  <p style="color:var(--muted); font-size:14.5px; margin:-6px 0 6px;">Tocá cada uno para ver cómo se usa. El número es su posición en la esfera de arriba.</p>
+
+  <div class="accordion" id="acc">
+
+    <details class="item" data-hour="1">
+      <summary><span class="hour">01</span><span class="title">Planificación estratégica</span><span class="chev">▾</span></summary>
+      <div class="body">
+        <p><b>Para qué es:</b> pensar el mediano/largo plazo. No ejecutar — pensar.</p>
+        <span class="tag">cómo se usa</span>
+        <p>Sesiones cortas y regulares (frecuencia fija, no todos los días) donde revisás tu meta, tu plan, y ajustás.</p>
+        <span class="tag">error típico</span>
+        <p>No separarlo nunca del día a día — entonces nunca pensás estrategia, solo apagás incendios.</p>
+      </div>
+    </details>
+
+    <details class="item" data-hour="2">
+      <summary><span class="hour">02</span><span class="title">Tiempo productivo</span><span class="chev">▾</span></summary>
+      <div class="body">
+        <p><b>Para qué es:</b> el trabajo que genera resultado directo — prospección, demos, cierres.</p>
+        <span class="tag">cómo se usa</span>
+        <ul>
+          <li>Armar la lista completa de tareas antes de arrancar</li>
+          <li>Clasificarlas con el método ABCDE (ver más abajo)</li>
+          <li>Una tarea por vez — el multitasking reduce la calidad de todo lo que tocás</li>
+        </ul>
+      </div>
+    </details>
+
+    <details class="item" data-hour="3">
+      <summary><span class="hour">03</span><span class="title">Mejora de ingresos</span><span class="chev">▾</span></summary>
+      <div class="body">
+        <p><b>Idea central:</b> tu ingreso lo determinan tres cosas — qué trabajo hacés, qué tan bien lo hacés, y qué tan difícil sos de reemplazar. La brecha de ingresos casi siempre es brecha de habilidad, no suerte.</p>
+        <span class="tag">cómo se usa</span>
+        <p>Identificá UNA habilidad que más impacto tenga (cierre, objeciones, liderazgo de equipo) y dedicale tiempo fijo y regular — no "cuando sobre".</p>
+      </div>
+    </details>
+
+    <details class="item" data-hour="4">
+      <summary><span class="hour">04</span><span class="title">Tiempo libre</span><span class="chev">▾</span></summary>
+      <div class="body">
+        <p><b>El cálculo:</b> 168 horas semanales − trabajo, sueño y rutina ≈ 44 horas libres.</p>
+        <span class="tag">cómo se usa</span>
+        <p>Auditar honestamente en qué se te va ese bloque hoy, y decidir con intención cuánto va a desarrollo (lectura, cursos, práctica) y cuánto a descanso real.</p>
+      </div>
+    </details>
+
+    <details class="item" data-hour="5">
+      <summary><span class="hour">05</span><span class="title">Gestión de interrupciones</span><span class="chev">▾</span></summary>
+      <div class="body">
+        <p>Este bloque se trabaja completo en la <b>Capa 4 — los 7 ladrones de tiempo</b>, más abajo en la página. Es el más operativo para auditar tu semana actual.</p>
+      </div>
+    </details>
+
+    <details class="item" data-hour="6">
+      <summary><span class="hour">06</span><span class="title">Tiempo creativo</span><span class="chev">▾</span></summary>
+      <div class="body">
+        <p><b>Para qué es:</b> generar ideas o resolver algo que necesita un enfoque no obvio — un mensaje nuevo, una mejora en tu proceso.</p>
+        <span class="tag">proceso en 5 pasos</span>
+        <ul>
+          <li>Verbalizar el objetivo con claridad</li>
+          <li>Visualizarlo ya resuelto</li>
+          <li>Conectarlo con por qué te importa</li>
+          <li>Soltar — no forzar la respuesta ahí mismo</li>
+          <li>Dejar que la idea aparezca (suele pasar caminando, no frente a la pantalla)</li>
+        </ul>
+        <p style="color:var(--muted); font-size:13.5px;">No se puede hacer apurado ni mezclado con otras tareas — necesita espacio propio.</p>
+      </div>
+    </details>
+
+    <details class="item" data-hour="7">
+      <summary><span class="hour">07</span><span class="title">Resolución de problemas</span><span class="chev">▾</span></summary>
+      <div class="body">
+        <span class="tag">técnica: mind storming</span>
+        <p>Escribí el problema como pregunta ("¿cómo aumento mi tasa de cierre en frío?") y forzate a escribir 20 respuestas posibles, aunque las primeras 10 sean obvias. Las útiles suelen aparecer después de la 10.</p>
+        <span class="tag">regla de cierre</span>
+        <p>Elegida la solución: asignale responsable y fecha. Sin eso, queda como buena idea que nunca se ejecuta.</p>
+      </div>
+    </details>
+
+    <details class="item" data-hour="8">
+      <summary><span class="hour">08</span><span class="title">Gente y familia</span><span class="chev">▾</span></summary>
+      <div class="body">
+        <p><b>Distinción clave:</b> el trabajo pide tiempo de <b style="color:var(--brass)">calidad</b> (foco, resultado). La familia pide tiempo de <b style="color:var(--brass)">cantidad</b> — los mejores momentos salen de tiempo no estructurado, no de citas cortas agendadas.</p>
+        <span class="tag">7 comportamientos</span>
+        <ul>
+          <li>Ser positivo por default</li>
+          <li>Elegir curiosidad antes que confrontación</li>
+          <li>Aceptar sin juzgar</li>
+          <li>Agradecer seguido</li>
+          <li>Elogiar en serio, no de forma automática</li>
+          <li>Reconocer esfuerzos, no solo resultados</li>
+          <li>Prestar atención real — sin el celular en la mano</li>
+        </ul>
+      </div>
+    </details>
+
+    <details class="item" data-hour="9">
+      <summary><span class="hour">09</span><span class="title">Descanso</span><span class="chev">▾</span></summary>
+      <div class="body">
+        <p><b>Dato clave:</b> la gente de alto rendimiento suele dormir y descansar más que el promedio — no menos. Descansar sostiene el rendimiento de todo lo demás.</p>
+        <span class="tag">técnicas</span>
+        <ul>
+          <li>Ponerte plazos más cortos de los que "necesitarías" — libera tiempo real de descanso en vez de que el trabajo se expanda para llenarlo todo</li>
+          <li>Planificar y pagar vacaciones a principio de año, no "cuando haya tiempo"</li>
+        </ul>
+      </div>
+    </details>
+
+    <details class="item" data-hour="10">
+      <summary><span class="hour">10</span><span class="title">Tiempo de silencio</span><span class="chev">▾</span></summary>
+      <div class="body">
+        <p><b>Para qué es:</b> el espacio donde procesás y conectás todos los tiempos anteriores. No es "no hacer nada" — es una pausa con función.</p>
+        <span class="tag">técnica</span>
+        <p>Respiración 7-7-7: inhalar contando 7, sostener 7, exhalar 7. Sirve antes de una decisión importante o después de un día cargado.</p>
+      </div>
+    </details>
+
+  </div>
+</section>
+
+<section class="tight">
+  <div class="kicker"><span class="n">3</span><h2>Rutina diaria: método ABCDE</h2></div>
+  <p style="color:var(--muted); font-size:14.5px; margin:-6px 0 16px;">Lo que aplicás todos los días para ordenar tu lista dentro del tiempo productivo (bloque 02).</p>
+
+  <div class="grid-table">
+    <div class="row"><div class="tag">A</div><div class="txt"><b>Consecuencias serias si no lo hacés</b><span>Cerrar una venta agendada, seguimiento a cliente caliente</span></div></div>
+    <div class="row"><div class="tag">B</div><div class="txt"><b>Consecuencias leves si no lo hacés</b><span>Responder un mail no urgente</span></div></div>
+    <div class="row"><div class="tag">C</div><div class="txt"><b>No pasa nada si no lo hacés</b><span>Cosas "lindas de hacer" sin impacto real</span></div></div>
+    <div class="row"><div class="tag">D</div><div class="txt"><b>Delegable</b><span>Algo que puede hacer otra persona de tu equipo</span></div></div>
+    <div class="row rust"><div class="tag">E</div><div class="txt"><b>Eliminable</b><span>No aporta nada — sacala directamente</span></div></div>
+  </div>
+
+  <div class="callout" style="margin-top:14px;">
+    <span class="eyebrow">Regla dura</span>
+    <p>No arrancás una tarea B hasta terminar todas las A. Nada de "voy alternando porque las B son más fáciles" — ahí es donde más se pierde el sistema.</p>
+  </div>
+</section>
+
+<section class="tight">
+  <div class="kicker"><span class="n">4</span><h2>Los 7 ladrones de tiempo</h2></div>
+  <p style="color:var(--muted); font-size:14.5px; margin:-6px 0 16px;">Checklist para auditar tu semana actual y detectar dónde se te escapa el tiempo sin decidirlo.</p>
+
+  <div class="thieves">
+    <div class="thief"><span class="num">01</span><div class="txt"><b>Teléfono / mail / mensajes</b><span>Agrupar respuestas en bloques fijos, no reaccionar en tiempo real a cada notificación</span></div></div>
+    <div class="thief"><span class="num">02</span><div class="txt"><b>Visitas o interrupciones inesperadas</b><span>Definir bloques de trabajo protegido donde no estás disponible</span></div></div>
+    <div class="thief"><span class="num">03</span><div class="txt"><b>Reuniones</b><span>Preguntarte si son necesarias, ir con agenda clara y responsables asignados</span></div></div>
+    <div class="thief"><span class="num">04</span><div class="txt"><b>Apagar incendios constantes</b><span>Delegar lo que se repite, armar protocolo para lo recurrente</span></div></div>
+    <div class="thief"><span class="num">05</span><div class="txt"><b>Procrastinación</b><span>Partir la tarea grande en pasos chicos, empezar por el más fácil de arrancar</span></div></div>
+    <div class="thief"><span class="num">06</span><div class="txt"><b>Socializar de más</b><span>Limitarlo a fuera de tus bloques de foco</span></div></div>
+    <div class="thief"><span class="num">07</span><div class="txt"><b>Indecisión</b><span>Clasificar: ¿solo vos la podés tomar? ¿es delegable? ¿urgente o postergable? — actuar según eso</span></div></div>
+  </div>
+</section>
+
+<section class="tight">
+  <div class="kicker"><span class="n">5</span><h2>Cómo armar tu semana</h2></div>
+
+  <ol class="steps">
+    <li><b>Definí tu meta principal</b> con la fórmula de 7 pasos. Si ya la tenés clara, igual escribila en 3P.</li>
+    <li><b>Auditá los 7 ladrones</b> sobre tu semana típica actual, honestamente.</li>
+    <li><b>Asigná bloques fijos</b> para cada uno de los 10 tiempos — no todos necesitan el mismo espacio, pero todos necesitan alguno protegido.</li>
+    <li><b>Revisión semanal fija</b> (domingo noche o lunes temprano): qué bloques respetaste, cuáles no, y ajustás la semana siguiente.</li>
+  </ol>
+
+  <div class="callout" style="margin-top:18px;">
+    <span class="eyebrow">Lo que este sistema NO es</span>
+    <p>No es una app ni una lista de tareas más. Es un criterio para reconocer qué tipo de tiempo estás viviendo en cada momento y actuar en consecuencia. El error más común: aplicar la lógica de un bloque (velocidad, productividad) a otro que pide lo opuesto (descanso, familia).</p>
+  </div>
+</section>
+
+<footer>SISTEMA DE CONTROL DE TIEMPO — ADAPTADO DE BRIAN TRACY</footer>
+
+<script>
+  // Construir la esfera de 10 marcas
+  const ticksGroup = document.getElementById('ticks');
+  const cx = 86, cy = 86, rOuter = 78, rInner = 66;
+  const hourNames = ['Estrategia','Productivo','Ingresos','Libre','Interrup.','Creativo','Problemas','Familia','Descanso','Silencio'];
+  for (let i = 0; i < 10; i++) {
+    const angle = (i / 10) * 2 * Math.PI - Math.PI / 2;
+    const x1 = cx + rInner * Math.cos(angle);
+    const y1 = cy + rInner * Math.sin(angle);
+    const x2 = cx + rOuter * Math.cos(angle);
+    const y2 = cy + rOuter * Math.sin(angle);
+    const line = document.createElementNS('http://www.w3.org/2000/svg','line');
+    line.setAttribute('x1', x1); line.setAttribute('y1', y1);
+    line.setAttribute('x2', x2); line.setAttribute('y2', y2);
+    line.setAttribute('stroke', 'rgba(237,234,226,0.28)');
+    line.setAttribute('stroke-width', '2.2');
+    line.setAttribute('stroke-linecap', 'round');
+    line.classList.add('dial-tick');
+    line.dataset.hour = i + 1;
+    ticksGroup.appendChild(line);
+  }
+
+  const dialNum = document.getElementById('dialNum');
+  const dialLabel = document.getElementById('dialLabel');
+  const allTicks = () => document.querySelectorAll('.dial-tick');
+
+  function setDial(hour){
+    allTicks().forEach(t => t.classList.toggle('active', t.dataset.hour == hour));
+    if(hour){
+      dialNum.textContent = String(hour).padStart(2,'0');
+      dialLabel.textContent = hourNames[hour-1];
+    } else {
+      dialNum.textContent = '10';
+      dialLabel.textContent = 'tipos de tiempo';
+    }
+  }
+
+  document.querySelectorAll('.item').forEach(item => {
+    item.addEventListener('toggle', () => {
+      if(item.open){
+        document.querySelectorAll('.item').forEach(other => { if(other !== item) other.open = false; });
+        setDial(item.dataset.hour);
+        item.scrollIntoView({behavior:'smooth', block:'start'});
+      } else {
+        setDial(null);
+      }
+    });
+  });
+</script>
+
+</body>
+</html>
